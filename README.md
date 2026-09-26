@@ -8,8 +8,8 @@ Cloudflare, Quad9, Comodo, Yandex, AdGuard), IPv4 + IPv6 quand disponible.
 
 - Se relance automatiquement en administrateur si besoin (`netsh` l'exige)
 - Vérifie si une nouvelle version est disponible sur ce dépôt et vous prévient
-  (voir [Mise à jour](#mise-à-jour) — **ne télécharge et ne remplace jamais
-  rien tout seul**)
+  (voir [Mise à jour](#mise-à-jour), ne télécharge et ne remplace jamais
+  rien tout seul)
 - Détecte les interfaces réseau réellement actives (Wi-Fi et/ou Ethernet) via
   PowerShell (`Get-NetAdapter`), pas de bidouille fragile avec `netsh+findstr`
 - Applique le DNS choisi à toutes les interfaces actives d'un coup
@@ -31,7 +31,7 @@ s'il ne peut pas joindre GitHub (hors ligne, `curl` absent sur les Windows
 antérieurs à la mise à jour 1803), la vérification est simplement ignorée et
 le script continue normalement.
 
-**Il ne fait que vous prévenir** — jamais de téléchargement ni de
+**Il ne fait que vous prévenir**, jamais de téléchargement ni de
 remplacement automatique. Si une nouvelle version est annoncée, revenez sur
 ce dépôt et retéléchargez le fichier vous-même.
 
