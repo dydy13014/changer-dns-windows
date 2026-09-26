@@ -2,7 +2,7 @@
 setlocal enabledelayedexpansion
 title Changer le serveur DNS
 
-set "SCRIPT_VERSION=1.0.1"
+set "SCRIPT_VERSION=1.1.0"
 set "VERSION_URL=https://raw.githubusercontent.com/dydy13014/changer-dns-windows/main/VERSION"
 set "REPO_URL=https://github.com/dydy13014/changer-dns-windows"
 
@@ -45,6 +45,8 @@ echo  4. Quad9                  (IPv4 + IPv6)
 echo  5. Comodo Secure DNS      (IPv4 uniquement)
 echo  6. Yandex.DNS             (IPv4 uniquement)
 echo  7. AdGuard DNS            (IPv4 + IPv6)
+echo  8. DNS personnalise (saisie manuelle)
+echo  9. Restaurer le DNS automatique (DHCP)
 echo  0. Quitter
 echo ============================================
 set "choice="
@@ -54,6 +56,7 @@ set "primaryDNSv4="
 set "secondaryDNSv4="
 set "primaryDNSv6="
 set "secondaryDNSv6="
+set "restoreDhcp=0"
 
 if "%choice%"=="1" (
     set primaryDNSv4=8.8.8.8
@@ -82,6 +85,10 @@ if "%choice%"=="1" (
     set secondaryDNSv4=94.140.15.15
     set primaryDNSv6=2a10:50c0::ad1:ff
     set secondaryDNSv6=2a10:50c0::ad2:ff
+) else if "%choice%"=="8" (
+    goto custom_dns
+) else if "%choice%"=="9" (
+    set "restoreDhcp=1"
 ) else if "%choice%"=="0" (
     exit /b
 ) else (
@@ -90,7 +97,29 @@ if "%choice%"=="1" (
     pause >nul
     goto menu
 )
+goto apply
 
+:custom_dns
+:: DNS personnalise : verif de forme minimale sur l'IPv4 (4 groupes de
+:: chiffres separes par des points), ne verifie pas que chaque groupe est
+:: bien entre 0 et 255 -- netsh rejettera lui-meme une IP hors plage, et
+:: l'affichage d'erreur ajoute au point 4 (ci-dessous) le signalera.
+set "customV4="
+set /p customV4="DNS primaire IPv4 (obligatoire) : "
+echo %customV4% | findstr /r "^[0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*$" >nul
+if errorlevel 1 (
+    echo.
+    echo Format invalide, une adresse IPv4 ressemble a 1.2.3.4
+    echo.
+    pause
+    goto menu
+)
+set "primaryDNSv4=%customV4%"
+set /p secondaryDNSv4="DNS secondaire IPv4 (optionnel, Entree pour ignorer) : "
+set /p primaryDNSv6="DNS primaire IPv6 (optionnel, Entree pour ignorer) : "
+if not "%primaryDNSv6%"=="" set /p secondaryDNSv6="DNS secondaire IPv6 (optionnel, Entree pour ignorer) : "
+
+:apply
 :: --- Liste des interfaces reseau reellement actives (fiable, via PowerShell) ---
 :: netsh+findstr sur "netsh interface show interface" capture la ligne entiere
 :: (etat + type + nom) et non le nom seul -> on evite ce piege en interrogeant
@@ -112,18 +141,37 @@ if %count%==0 (
 )
 
 echo.
-echo Application des DNS a %count% interface(s) active(s) :
+if "%restoreDhcp%"=="1" (
+    echo Restauration du DNS automatique sur %count% interface(s) active(s) :
+) else (
+    echo Application des DNS a %count% interface(s) active(s) :
+)
 
 for /l %%n in (1,1,%count%) do (
     set "iface=!iface%%n!"
     echo  - !iface!
 
-    netsh interface ipv4 set dns name="!iface!" source=static addr=%primaryDNSv4% >nul
-    if not "%secondaryDNSv4%"=="" netsh interface ipv4 add dns name="!iface!" addr=%secondaryDNSv4% index=2 >nul
+    if "%restoreDhcp%"=="1" (
+        netsh interface ipv4 set dnsservers name="!iface!" source=dhcp >nul
+        if errorlevel 1 echo    ATTENTION: echec IPv4 sur !iface!
+        netsh interface ipv6 set dnsservers name="!iface!" source=dhcp >nul
+        if errorlevel 1 echo    ^(IPv6 non concerne sur cette interface, normal si elle n'en a pas^)
+    ) else (
+        netsh interface ipv4 set dns name="!iface!" source=static addr=%primaryDNSv4% >nul
+        if errorlevel 1 echo    ATTENTION: echec IPv4 sur !iface!, verifiez l'adresse saisie
+        if not "%secondaryDNSv4%"=="" (
+            netsh interface ipv4 add dns name="!iface!" addr=%secondaryDNSv4% index=2 >nul
+            if errorlevel 1 echo    ATTENTION: echec IPv4 secondaire sur !iface!
+        )
 
-    if not "%primaryDNSv6%"=="" (
-        netsh interface ipv6 set dns name="!iface!" source=static addr=%primaryDNSv6% >nul
-        if not "%secondaryDNSv6%"=="" netsh interface ipv6 add dns name="!iface!" addr=%secondaryDNSv6% index=2 >nul
+        if not "%primaryDNSv6%"=="" (
+            netsh interface ipv6 set dns name="!iface!" source=static addr=%primaryDNSv6% >nul
+            if errorlevel 1 echo    ATTENTION: echec IPv6 sur !iface!, verifiez l'adresse saisie
+            if not "%secondaryDNSv6%"=="" (
+                netsh interface ipv6 add dns name="!iface!" addr=%secondaryDNSv6% index=2 >nul
+                if errorlevel 1 echo    ATTENTION: echec IPv6 secondaire sur !iface!
+            )
+        )
     )
 )
 

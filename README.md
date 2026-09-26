@@ -2,7 +2,9 @@
 
 Script `.bat` pour changer rapidement de serveur DNS sur Windows, sans repasser
 par les Paramètres à chaque fois. Menu avec 7 fournisseurs (Google, OpenDNS,
-Cloudflare, Quad9, Comodo, Yandex, AdGuard), IPv4 + IPv6 quand disponible.
+Cloudflare, Quad9, Comodo, Yandex, AdGuard), une option DNS personnalisé, et
+une option pour revenir au DNS automatique (DHCP). IPv4 + IPv6 quand
+disponible.
 
 ## Ce qu'il fait
 
@@ -13,6 +15,14 @@ Cloudflare, Quad9, Comodo, Yandex, AdGuard), IPv4 + IPv6 quand disponible.
 - Détecte les interfaces réseau réellement actives (Wi-Fi et/ou Ethernet) via
   PowerShell (`Get-NetAdapter`), pas de bidouille fragile avec `netsh+findstr`
 - Applique le DNS choisi à toutes les interfaces actives d'un coup
+- Option **DNS personnalisé** (menu 8) : saisie manuelle d'une IPv4 (et
+  optionnellement IPv6) si vous voulez un fournisseur qui n'est pas dans la
+  liste
+- Option **Restaurer le DNS automatique** (menu 9) : repasse toutes les
+  interfaces actives en DHCP, pour annuler un changement précédent
+- Signale explicitement si une commande `netsh` échoue sur une interface
+  (adresse invalide, interface qui refuse le changement...), au lieu d'un
+  échec silencieux
 - Affiche la config DNS finale pour vérifier
 
 ## Installation
