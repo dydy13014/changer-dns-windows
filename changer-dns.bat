@@ -2,7 +2,7 @@
 setlocal enabledelayedexpansion
 title Changer le serveur DNS
 
-set "SCRIPT_VERSION=1.0.0"
+set "SCRIPT_VERSION=1.0.1"
 set "VERSION_URL=https://raw.githubusercontent.com/dydy13014/changer-dns-windows/main/VERSION"
 set "REPO_URL=https://github.com/dydy13014/changer-dns-windows"
 
